@@ -15,15 +15,15 @@ class ClassificationLitModule(pl.LightningModule):
         self.num_classes = num_classes
         self.all_nnz, self.all_nnumel = 0, 0
 
-        self.train_acc = torchmetrics.Accuracy(num_classes=num_classes)
-        self.val_acc = torchmetrics.Accuracy(num_classes=num_classes)
-        self.test_acc = torchmetrics.Accuracy(num_classes=num_classes)
-        self.train_acc_by_class = torchmetrics.Accuracy(num_classes=num_classes, average="none")
-        self.val_acc_by_class = torchmetrics.Accuracy(num_classes=num_classes, average="none")
-        self.test_acc_by_class = torchmetrics.Accuracy(num_classes=num_classes, average="none")
-        self.train_confmat = torchmetrics.ConfusionMatrix(num_classes=num_classes)
-        self.val_confmat = torchmetrics.ConfusionMatrix(num_classes=num_classes)
-        self.test_confmat = torchmetrics.ConfusionMatrix(num_classes=num_classes)
+        self.train_acc = torchmetrics.Accuracy(task='MULTICLASS',num_classes=num_classes)
+        self.val_acc = torchmetrics.Accuracy(task='MULTICLASS',num_classes=num_classes)
+        self.test_acc = torchmetrics.Accuracy(task='MULTICLASS',num_classes=num_classes)
+        self.train_acc_by_class = torchmetrics.Accuracy(task='MULTICLASS',num_classes=num_classes, average="none")
+        self.val_acc_by_class = torchmetrics.Accuracy(task='MULTICLASS',num_classes=num_classes, average="none")
+        self.test_acc_by_class = torchmetrics.Accuracy(task='MULTICLASS',num_classes=num_classes, average="none")
+        self.train_confmat = torchmetrics.ConfusionMatrix(task='MULTICLASS',num_classes=num_classes)
+        self.val_confmat = torchmetrics.ConfusionMatrix(task='MULTICLASS',num_classes=num_classes)
+        self.test_confmat = torchmetrics.ConfusionMatrix(task='MULTICLASS',num_classes=num_classes)
 
         self.model = model
 
@@ -86,7 +86,8 @@ class ClassificationLitModule(pl.LightningModule):
         print(f"{mode} confusion matrix:")
         self_confmat = getattr(self, f"{mode}_confmat")
         confmat = self_confmat.compute()
-        self.log(f'{mode}_confmat', confmat)
+        #print(f'Argha: confmat: {confmat}')
+        self.log(f'{mode}_confmat', confmat.float().mean())
         print(confmat)
         self_confmat.reset()
 

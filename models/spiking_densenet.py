@@ -207,10 +207,13 @@ def sequential_forward(sequential, x_seq):
     out = x_seq
     for i in range(len(sequential)):
         m = sequential[i]
+        #print(f'Argha:  m: {m}, out: {out}  ', end='')
         if isinstance(m, neuron.BaseNode):
             out = m(out)
+            #print(f'out=m(out): {out}')
         else:
-            out = functional.seq_to_ann_forward(out, m)
+            #print("Argha:     ", type(out), type(m))
+            out = functional.seq_to_ann_forward(out.float(), m)
     return out
 
 

@@ -10,6 +10,7 @@ except ImportError:
     print("Comet is not installed, Comet logger will not be available.")
 
 import torch
+torch.cuda.empty_cache()
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -113,7 +114,7 @@ def main():
             
 
     trainer = pl.Trainer(
-        gpus=[args.device], gradient_clip_val=1., max_epochs=args.epochs,
+        accelerator="cpu", gradient_clip_val=1., max_epochs=args.epochs,
         limit_train_batches=1., limit_val_batches=.25,
         check_val_every_n_epoch=5,
         deterministic=False,

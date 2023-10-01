@@ -12,7 +12,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CometLogger
 
-from datasets.classification_datasets import NCARSClassificationDataset, GEN1ClassificationDataset
+from datasets import NCARSClassificationDataset, GEN1ClassificationDataset
 from models.utils import get_model
 from classification_module import ClassificationLitModule
 
@@ -30,11 +30,11 @@ def main():
     parser.add_argument('-image_shape', default=(304,240), type=tuple, help='spatial resolution of events')
 
     parser.add_argument('-dataset', default='ncars', type=str, help='dataset used {NCARS, GEN1}')
-    parser.add_argument('-path', default='PropheseeNCARS', type=str, help='dataset used. {NCARS, GEN1}')
+    parser.add_argument('-path', default='datasets', type=str, help='dataset used. {NCARS, GEN1}')
     parser.add_argument('-undersample_cars_percent', default='0.24', type=float, help=
                         'Undersample cars in Prophesse GEN1 Classification by using only x percent of cars.')
 
-    parser.add_argument('-model', default='vgg-11', type=str, help='model used {squeezenet-v, vgg-v, mobilenet-v, densenet-v}')
+    parser.add_argument('-model', default='densenet-121_16', type=str, help='model used {squeezenet-v, vgg-v, mobilenet-v, densenet-v}')
     parser.add_argument('-no_bn', action='store_false', help='don\'t use BatchNorm2d', dest='bn')
     parser.add_argument('-pretrained', default=None, type=str, help='path to pretrained model')
     parser.add_argument('-lr', default=5e-3, type=float, help='learning rate used')
@@ -60,10 +60,11 @@ def main():
 
     train_dataloader = DataLoader(train_dataset, batch_size=args.b, num_workers=8, shuffle=True)
     test_dataloader = DataLoader(test_dataset, batch_size=args.b, num_workers=8)
-
+    print(next(iter(train_dataloader))[0].shape)
+    print('args.bn', args.bn)
     model = get_model(args)
     module = ClassificationLitModule(model, epochs=args.epochs, lr=args.lr)
-
+    print(model)
     # LOAD PRETRAINED MODEL
     if args.pretrained is not None:
         ckpt_path = join("pretrained", join(args.model, args.pretrained))
@@ -94,7 +95,7 @@ def main():
             print("Comet is not installed, Comet logger will not be available.")
 
     trainer = pl.Trainer(
-        gpus=[args.device], gradient_clip_val=1., max_epochs=args.epochs,
+        accelerator="gpu", gradient_clip_val=1., max_epochs=args.epochs,
         limit_train_batches=1., limit_val_batches=1.,
         check_val_every_n_epoch=1,
         deterministic=False,

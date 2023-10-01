@@ -1,0 +1,11 @@
+__pycache__/
+ckpt-*
+**/*__pycache__
+**/*.pt
+**/train/*
+**/test/*
+lightning_logs/
+pretrained/
+shape_.py
+try_snn_densenet.py
+try_snn_densenet1.py

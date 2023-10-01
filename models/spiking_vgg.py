@@ -129,7 +129,7 @@ class MultiStepSpikingVGG(SpikingVGG):
         x_seq = None
         if x.dim() == 5:
             # x.shape = [T, N, C, H, W]
-            x_seq = functional.seq_to_ann_forward(x, self.features[0])
+            x_seq = functional.seq_to_ann_forward(x.float(), self.features[0])
         else:
             assert self.T is not None, 'When x.shape is [N, C, H, W], self.T can not be None.'
             # x.shape = [N, C, H, W]
