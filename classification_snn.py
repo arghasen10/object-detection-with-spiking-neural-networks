@@ -90,7 +90,6 @@ def main():
 
     loss_hist = []
     acc_hist = []
-    num_iters = 0
     # training loop
     for epoch in range(num_epochs):
         for i, (data, targets) in enumerate(iter(train_dataloader)):
@@ -116,10 +115,6 @@ def main():
             acc_hist.append(acc)
             print(f"Accuracy: {acc * 100:.2f}%\n")
 
-            # training loop breaks after 20 iterations
-            if num_iters == 20:
-                break
-            num_iters += 1
     test_acc = calculate_accuracy(net, test_dataloader=test_dataloader, device=device)
     print(f'Test Accuracy: {test_acc}')
 
