@@ -1,30 +1,44 @@
 from os.path import join
 import sys
 import argparse
-import torch
-torch.manual_seed(0)
 from torch.utils.data import DataLoader
 from datasets.classification_datasets import NCARSClassificationDataset, GEN1ClassificationDataset
+import snntorch as snn
+import torch
+import torch.nn as nn
 from snntorch import surrogate
 from snntorch import functional as SF
-from models.vgg_snn import VGG16
+from snntorch import spikeplot as splt
+from snntorch import utils
 
 
 def calculate_accuracy(model, test_dataloader, device):
     model.eval()  # Set the model to evaluation mode
     
+    correct = 0
+    total = 0
     acc_hist = []
     with torch.no_grad():
         for data, targets in test_dataloader:
             data = data.permute(1, 0, 2, 3, 4).to(device)
             targets = targets.to(device)
             
-            spk_rec = model(data.float())
+            spk_rec = forward_pass(model, data=data)
             acc = SF.accuracy_rate(spk_rec, targets)            
             acc_hist.append(acc)
 
     accuracy = 100 * torch.Tensor(acc_hist).mean()
     return accuracy
+
+def forward_pass(net, data):
+  spk_rec = []
+  utils.reset(net)  # resets hidden states for all LIF neurons in net
+
+  for step in range(data.size(0)):  # data.size(0) = number of time steps
+      spk_out, mem_out = net(data[step].float())
+      spk_rec.append(spk_out)
+
+  return torch.stack(spk_rec)
 
 
 def main():
@@ -43,7 +57,7 @@ def main():
     parser.add_argument('-undersample_cars_percent', default='0.24', type=float, help=
                         'Undersample cars in Prophesse GEN1 Classification by using only x percent of cars.')
 
-    parser.add_argument('-model', default='vgg-16', type=str, help='model used {squeezenet-v, vgg-v, mobilenet-v, densenet-v}')
+    parser.add_argument('-model', default='vgg-11', type=str, help='model used {squeezenet-v, vgg-v, mobilenet-v, densenet-v}')
     parser.add_argument('-no_bn', action='store_false', help='don\'t use BatchNorm2d', dest='bn')
     parser.add_argument('-pretrained', default=None, type=str, help='path to pretrained model')
     parser.add_argument('-lr', default=5e-3, type=float, help='learning rate used')
@@ -74,32 +88,37 @@ def main():
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    net = VGG16(spike_grad = surrogate.atan(), beta = 0.9, num_classes=2).to(device)
+    # neuron and simulation parameters
+    spike_grad = surrogate.atan()
+    beta = 0.9
 
-    optimizer = torch.optim.Adam(net.parameters(), lr=args.lr, betas=(0.9, 0.999))
+    #  Initialize Network
+    net = nn.Sequential(nn.Conv2d(4, 12, 5),
+                        nn.MaxPool2d(2),
+                        snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
+                        nn.Conv2d(12, 32, 5),
+                        nn.MaxPool2d(2),
+                        snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
+                        nn.Flatten(),
+                        nn.Linear(32*13*13, 2),
+                        snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True, output=True)
+                        ).to(device)
+
+    optimizer = torch.optim.Adam(net.parameters(), lr=2e-2, betas=(0.9, 0.999))
     loss_fn = SF.mse_count_loss(correct_rate=0.8, incorrect_rate=0.2)
     #loss_fn = nn.CrossEntropyLoss()
-
-    if args.pretrained is not None:
-        net.load_state_dict(torch.load(args.pretrained))
-        test_acc = calculate_accuracy(net, test_dataloader=test_dataloader, device=device)
-        print(f'Test Accuracy: {test_acc}')
-        return
-
     num_epochs = args.epochs
 
     loss_hist = []
     acc_hist = []
-    num_iters = 0
+
     # training loop
     for epoch in range(num_epochs):
         for i, (data, targets) in enumerate(iter(train_dataloader)):
             data = data.permute(1, 0, 2, 3, 4).to(device)
             targets = targets.to(device)
             net.train()
-
-            spk_rec = net(data.float())
-            loss_val = torch.zeros((1), dtype=torch.float, device=device)
+            spk_rec = forward_pass(net, data)
             loss_val = loss_fn(spk_rec, targets)
 
             # Gradient calculation + weight update
@@ -116,20 +135,9 @@ def main():
             acc_hist.append(acc)
             print(f"Accuracy: {acc * 100:.2f}%\n")
 
-            # training loop breaks after 20 iterations
-            if num_iters == 20:
-                break
-            num_iters += 1
-    test_acc = calculate_accuracy(net, test_dataloader=test_dataloader, device=device)
-    print(f'Test Accuracy: {test_acc}')
+            # training loop breaks after 50 iterations
 
-    if args.save_ckpt:
-        filepath = f'saved_model/{args.model}_{args.epochs}_{args.T}_{args.b}.pth'
-        torch.save(net.state_dict(), filepath)
-
-        with open(f'saved_model/{args.model}_{args.epochs}_{args.T}_{args.b}_result.txt', 'w') as file:
-            file.write(f'Test Accuracy: {test_acc}')
-
+    print(f'Test Accuracy: {calculate_accuracy(net, test_dataloader=test_dataloader, device=device)}')
 
 
 if __name__ == '__main__':
