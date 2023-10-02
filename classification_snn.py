@@ -110,7 +110,8 @@ def main():
             loss_hist.append(loss_val.item())
 
             print(f"Epoch {epoch}, Iteration {i} \nTrain Loss: {loss_val.item():.2f}")
-
+            print('Inferred: ', spk_rec.sum(dim=0).max(1)[-1])
+            print('Actual: ', targets)
             acc = SF.accuracy_rate(spk_rec, targets)
             acc_hist.append(acc)
             print(f"Accuracy: {acc * 100:.2f}%\n")
