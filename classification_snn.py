@@ -79,9 +79,9 @@ def main():
     if args.model == "vgg-16":
         net = VGG16(spike_grad = surrogate.atan(), beta = 0.9, num_classes=2).to(device)
     elif args.model == "densenet":
-        net = DenseNet(spike_grad = surrogate.atan(), num_classes=2)
+        net = DenseNet(spike_grad = surrogate.atan(), num_classes=2).to(device)
     elif args.model == "mobilenet":
-        net = MobileNetV1(spike_grad = surrogate.atan(), num_classes=2)
+        net = MobileNetV1(spike_grad = surrogate.atan(), num_classes=2).to(device)
         
     optimizer = torch.optim.Adam(net.parameters(), lr=args.lr, betas=(0.9, 0.999))
     loss_fn = SF.mse_count_loss(correct_rate=0.8, incorrect_rate=0.2)
