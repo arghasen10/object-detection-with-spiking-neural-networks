@@ -9,12 +9,12 @@ class DenseBlock(nn.Module):
         super(DenseBlock, self).__init__()
         self.spike_grad = spike_grad
         self.conv1 = nn.Conv2d(in_channels, growth_rate, kernel_size=3, padding=1)
-        beta1 = torch.rand(growth_rate)
-        thr1 = torch.rand(growth_rate)
+        beta1 = torch.rand(int(growth_rate/2))
+        thr1 = torch.rand(int(growth_rate/2))
         self.lif1 = snn.Leaky(beta=beta1, threshold=thr1, learn_beta=True, learn_threshold=True, spike_grad=self.spike_grad)
         self.conv2 = nn.Conv2d(growth_rate, growth_rate, kernel_size=3, padding=1)
-        beta2 = torch.rand(growth_rate)
-        thr2 = torch.rand(growth_rate)
+        beta2 = torch.rand(int(growth_rate/2))
+        thr2 = torch.rand(int(growth_rate/2))
         self.lif2 = snn.Leaky(beta=beta2, threshold=thr2, learn_beta=True, learn_threshold=True, spike_grad=self.spike_grad)
     
     def init_leaky(self):
@@ -58,13 +58,13 @@ class DenseNet(nn.Module):
         self.growth_rate = growth_rate
         self.spike_grad = spike_grad
         # Initial convolution
-        self.conv1 = nn.Conv2d(3, 2 * growth_rate, kernel_size=7, stride=2, padding=3)
-        self.beta1 = torch.rand(2 * growth_rate)
-        self.thr1 = torch.rand(2 * growth_rate)
+        self.conv1 = nn.Conv2d(4, 2 * growth_rate, kernel_size=7, stride=2, padding=3)
+        self.beta1 = torch.rand(growth_rate)
+        self.thr1 = torch.rand(growth_rate)
         self.lif1 = snn.Leaky(beta=self.beta1, threshold=self.thr1, learn_beta=True, learn_threshold=True, spike_grad=self.spike_grad)
         self.pool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.beta2 = torch.rand(2 * growth_rate)
-        self.thr2 = torch.rand(2 * growth_rate)
+        self.beta2 = torch.rand(int(growth_rate/2))
+        self.thr2 = torch.rand(int(growth_rate/2))
         self.lif2 = snn.Leaky(beta=self.beta2, threshold=self.thr2, learn_beta=True, learn_threshold=True, spike_grad=self.spike_grad)
         # Dense Blocks
         self.dense1 = self._make_dense_block(2 * growth_rate, block_config[0])
@@ -114,7 +114,9 @@ class DenseNet(nn.Module):
         spk_rec = []
         self.init_leaky()
         for step in range(x1.size(0)):  # data.size(0) = number of time steps
+            print('#### x shape: ', x1[step].shape)
             out, self.mem1 = self.lif1(self.conv1(x1[step]), self.mem1)
+            print(' out, self.mem1 = self.lif1(self.conv1(x1[step]), self.mem1)', out.shape)
             out, self.mem2 = self.lif2(self.pool(out), self.mem2)
             out = self.dense1(out)
             out = self.trans1(out)
