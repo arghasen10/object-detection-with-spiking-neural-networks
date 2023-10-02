@@ -2,8 +2,6 @@ import torch
 import torch.nn as nn
 import snntorch as snn
 from snntorch import surrogate
-from snntorch import functional as SF
-from snntorch import spikeplot as splt
 
 
 class VGG16(nn.Module):
@@ -172,7 +170,7 @@ class VGG16(nn.Module):
         self.init_leaky()
         for step in range(x1.size(0)):  # data.size(0) = number of time steps
             x = self.forward_features(x1[step])
-            spk_out, __ = self.forward_classifier(x)
+            spk_out, self.mem17 = self.forward_classifier(x)
             spk_rec.append(spk_out)
         return torch.stack(spk_rec)
         

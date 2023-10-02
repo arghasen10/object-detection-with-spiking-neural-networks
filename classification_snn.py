@@ -8,6 +8,7 @@ from datasets.classification_datasets import NCARSClassificationDataset, GEN1Cla
 from snntorch import surrogate
 from snntorch import functional as SF
 from models.vgg_snn import VGG16
+from models.densenet_snn import DenseNet
 
 
 def calculate_accuracy(model, test_dataloader, device):
@@ -39,7 +40,7 @@ def main():
     parser.add_argument('-image_shape', default=(304,240), type=tuple, help='spatial resolution of events')
 
     parser.add_argument('-dataset', default='ncars', type=str, help='dataset used {NCARS, GEN1}')
-    parser.add_argument('-path', default='PropheseeNCARS', type=str, help='dataset used. {NCARS, GEN1}')
+    parser.add_argument('-path', default='datasets', type=str, help='dataset used. {NCARS, GEN1}')
     parser.add_argument('-undersample_cars_percent', default='0.24', type=float, help=
                         'Undersample cars in Prophesse GEN1 Classification by using only x percent of cars.')
 
@@ -74,8 +75,10 @@ def main():
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    net = VGG16(spike_grad = surrogate.atan(), beta = 0.9, num_classes=2).to(device)
-
+    if args.model == "vgg-16":
+        net = VGG16(spike_grad = surrogate.atan(), beta = 0.9, num_classes=2).to(device)
+    if args.model == "densenet":
+        net = DenseNet(spike_grad = surrogate.atan(), num_classes=2)
     optimizer = torch.optim.Adam(net.parameters(), lr=args.lr, betas=(0.9, 0.999))
     loss_fn = SF.mse_count_loss(correct_rate=0.8, incorrect_rate=0.2)
     #loss_fn = nn.CrossEntropyLoss()
