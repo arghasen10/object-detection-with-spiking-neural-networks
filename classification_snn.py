@@ -10,7 +10,8 @@ from snntorch import functional as SF
 from models.vgg_snn import VGG16
 from models.densenet_snn import DenseNet
 from models.mobilenet_snn import MobileNetV1
-
+import time
+timestr = time.strftime("%Y%m%d-%H%M%S")
 
 def calculate_accuracy(model, test_dataloader, device):
     model.eval()  # Set the model to evaluation mode
@@ -127,7 +128,7 @@ def main():
     print(f'Test Accuracy: {test_acc}')
 
     if args.save_ckpt:
-        filepath = f'saved_model/{args.model}_{args.epochs}_{args.T}_{args.b}.pth'
+        filepath = f'saved_model/{args.model}_{args.epochs}_{args.T}_{args.b}_{timestr}.pth'
         torch.save(net.state_dict(), filepath)
 
         with open(f'saved_model/{args.model}_{args.epochs}_{args.T}_{args.b}_result.txt', 'w') as file:
