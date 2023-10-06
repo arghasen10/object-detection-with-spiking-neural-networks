@@ -131,7 +131,7 @@ def main():
         filepath = f'saved_model/{args.model}_{args.epochs}_{args.T}_{args.b}_{timestr}.pth'
         torch.save(net.state_dict(), filepath)
 
-        with open(f'saved_model/{args.model}_{args.epochs}_{args.T}_{args.b}_result.txt', 'w') as file:
+        with open(f'saved_model/{args.model}_{args.epochs}_{args.T}_{args.b}_{timestr}result.txt', 'w') as file:
             file.write(f'Test Accuracy: {test_acc}')
 
 
