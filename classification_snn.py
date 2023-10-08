@@ -10,6 +10,7 @@ from snntorch import functional as SF
 from models.vgg_snn import VGG16
 from models.densenet_snn import DenseNet
 from models.mobilenet_snn import MobileNetV1
+from models.squeezenet_snn import SqueezeNet
 import time
 timestr = time.strftime("%Y%m%d-%H%M%S")
 
@@ -83,6 +84,8 @@ def main():
         net = DenseNet(spike_grad = surrogate.atan(), num_classes=2).to(device)
     elif args.model == "mobilenet":
         net = MobileNetV1(spike_grad = surrogate.atan(), num_classes=2).to(device)
+    elif args.model == "squeezenet":
+        net = SqueezeNet(spike_grad = surrogate.atan(), num_classes=2).to(device)
         
     optimizer = torch.optim.Adam(net.parameters(), lr=args.lr, betas=(0.9, 0.999))
     loss_fn = SF.mse_count_loss(correct_rate=0.8, incorrect_rate=0.2)
