@@ -9,4 +9,5 @@ pretrained/
 shape_.py
 try_snn_densenet.py
 try_snn_densenet1.py
-saved_model
+saved_model/*.pth
+
