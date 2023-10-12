@@ -39,7 +39,7 @@ def main():
     parser.add_argument('-T', default=5, type=int, help='simulating time-steps')
     parser.add_argument('-tbin', default=2, type=int, help='number of micro time bins')
     parser.add_argument('-image_shape', default=(240,304), type=tuple, help='spatial resolution of events')
-
+    parser.add_argument('-subset', default=500, type=int, help='subset of train or val dataset')
     # Training
     parser.add_argument('-epochs', default=50, type=int, help='number of total epochs to run')
     parser.add_argument('-lr', default=1e-3, type=float, help='learning rate used')
@@ -114,7 +114,7 @@ def main():
             
 
     trainer = pl.Trainer(
-        accelerator="cpu", gradient_clip_val=1., max_epochs=args.epochs,
+        accelerator="auto", gradient_clip_val=1., max_epochs=args.epochs,
         limit_train_batches=1., limit_val_batches=.25,
         check_val_every_n_epoch=5,
         deterministic=False,
@@ -125,13 +125,18 @@ def main():
 
     if args.train:
         train_dataset = dataset(args, mode="train")
-        val_dataset = dataset(args, mode="val")    
+        val_dataset = dataset(args, mode="val")
+        train_dataset = torch.utils.data.random_split(train_dataset, [args.subset, len(train_dataset)-args.subset])[0]
+        val_dataset = torch.utils.data.random_split(val_dataset, [args.subset, len(val_dataset)-args.subset])[0]
+        #print(f'train_dataset: {len(train_dataset)}')
+        #print(f'val_dataset: {len(val_dataset)}')
         train_dataloader = DataLoader(train_dataset, batch_size=args.b, collate_fn=collate_fn, num_workers=args.num_workers, shuffle=True)
         val_dataloader = DataLoader(val_dataset, batch_size=args.b, collate_fn=collate_fn, num_workers=args.num_workers)
         
         trainer.fit(module, train_dataloader, val_dataloader)
     if args.test:
         test_dataset = dataset(args, mode="test")
+        test_dataset = torch.utils.data.random_split(test_dataset, [args.subset, len(test_dataset)-args.subset])[0]
         test_dataloader = DataLoader(test_dataset, batch_size=args.b, collate_fn=collate_fn, num_workers=args.num_workers)
 
         trainer.test(module, test_dataloader)
